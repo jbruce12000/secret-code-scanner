@@ -83,18 +83,22 @@ class Scanner:
                 print "ERR loading %s" % entry
 
     def scan(self,path='.'):
+        scanned = 0
+        matches = []
         for dirpath, dirnames, files in os.walk(path):
             for name in files:
+                scanned = scanned + 1
                 (filename, extension) = os.path.splitext(name)
                 #print "OK scan %s" % (dirpath+"/"+name)
                 if extension.startswith("."):
                     extension = extension[1:]
-                matches = []
                 for pattern in self.patterns:
                     if pattern.matches(dirpath,name,extension):
                         matches.append(pattern)
-                for pattern in matches:
-                    print "OK match %s %s" % (pattern, dirpath+"/"+name)
+        for pattern in matches:
+            print "OK match %s %s" % (pattern, dirpath+"/"+name)
+        print "Files scanned = %d" % scanned
+        print "Files with potential secrets = %d" % len(matches)
 
 
 
