@@ -87,8 +87,8 @@ class Scanner:
             for name in files:
                 (filename, extension) = os.path.splitext(name)
                 #print "OK scan %s" % (dirpath+"/"+name)
-                if extension.startswith("."): extension = extension[1:]
-                #print "%s, %s, %s" % (dirpath, filename, extension)
+                if extension.startswith("."):
+                    extension = extension[1:]
                 matches = []
                 for pattern in self.patterns:
                     if pattern.matches(dirpath,name,extension):
@@ -100,8 +100,13 @@ class Scanner:
 
 
 if __name__ == "__main__":
-  s = Scanner()
-  s.scan(path='/home/jbruce/repos/')
-  #for i in s.patterns_for_extension():
-  #    print i
+
+    # -d parent directory
+    # -g github clone url
+
+
+    s = Scanner()
+    s.scan(path='/home/jbruce/repos/')
+    #for i in s.patterns_for_extension():
+    #    print i
   
