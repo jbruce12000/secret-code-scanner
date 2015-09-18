@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-#import ntpath
+
 import json
 import os
 import re
+import argparse
 
 class Pattern:
 
@@ -84,7 +85,7 @@ class Scanner:
 
     def scan(self,path='.'):
         scanned = 0
-        matches = []
+        total_matches = 0
         for dirpath, dirnames, files in os.walk(path):
             for name in files:
                 scanned = scanned + 1
@@ -92,25 +93,32 @@ class Scanner:
                 #print "OK scan %s" % (dirpath+"/"+name)
                 if extension.startswith("."):
                     extension = extension[1:]
+                matches = []
                 for pattern in self.patterns:
                     if pattern.matches(dirpath,name,extension):
                         matches.append(pattern)
-        for pattern in matches:
-            print "OK match %s %s" % (pattern, dirpath+"/"+name)
-        print "Files scanned = %d" % scanned
-        print "Files with potential secrets = %d" % len(matches)
+                total_matches = total_matches + len(matches)
+                for pattern in matches:
+                    print "OK match %s %s" % (pattern, dirpath+"/"+name)
+        print "\nFiles scanned = %d" % scanned
+        print "Files with potential secrets = %d" % total_matches
 
 
 
 
 if __name__ == "__main__":
 
-    # -d parent directory
-    # -g github clone url
+    parser = argparse.ArgumentParser(description='Find secrets')
+    parser.add_argument('-d', '--parent-dir', nargs='?',
+                       help='parent directory for recursive scanning of files')
+    parser.add_argument('-g', '--github-clone-url', nargs='?',
+                       help='github url to clone and scan')
+    parser.add_argument('-p', '--patterns-file', nargs='?',
+                       help='json file of patterns for scanning')
 
+    args = parser.parse_args()
 
     s = Scanner()
-    s.scan(path='/home/jbruce/repos/')
-    #for i in s.patterns_for_extension():
-    #    print i
-  
+    if args.parent_dir:
+        s.scan(path='/home/jbruce/repos/')
+
