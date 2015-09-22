@@ -4,6 +4,7 @@ import json
 import os
 import re
 import argparse
+from github import Github
 
 class Pattern:
 
@@ -62,11 +63,15 @@ class Pattern:
 
 class Scanner:
   
-    def __init__(self,patterns_file='./patterns.json'):
+    def __init__(self,patterns_file='./patterns.json',
+                      github_api_token=None,
+                      github_base_url='http://github.com/api/v3'):
         self.patterns_file=patterns_file
         self.patterns = []
         self.obj = None
         self.load_patterns()
+        self.github_api_token = github_api_token
+        self.github_base_url = github_base_url
   
     def load_patterns(self):
         with open(self.patterns_file) as json_data:
@@ -103,7 +108,22 @@ class Scanner:
         print "\nFiles scanned = %d" % scanned
         print "Files with potential secrets = %d" % total_matches
 
+    def crawl_github(self,repo,path):
+       for cfile in repo.get_dir_contents(path):
+           if cfile.type == "file":
+               print cfile.path
+               #print cfile.url
+           if cfile.type == "dir":
+               self.crawl_github(repo,cfile.path)
 
+    def scan_github(self):
+         from github import Github
+         g = Github(login_or_token=self.github_api_token,
+                    base_url=self.github_base_url)
+         # all repos for a user
+         for repo in g.get_user().get_repos():
+             print "starting repo %s" % repo.name
+             self.crawl_github(repo,'/')
 
 
 if __name__ == "__main__":
@@ -111,14 +131,24 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Find secrets')
     parser.add_argument('-d', '--parent-dir', nargs='?',
                        help='parent directory for recursive scanning of files')
-    parser.add_argument('-g', '--github-clone-url', nargs='?',
-                       help='github url to clone and scan')
+    parser.add_argument('-t', '--github-api-token', nargs='?',
+                       help='github api token')
+    parser.add_argument('-b', '--github-base-url', nargs='?',
+                       help='github base url')
     parser.add_argument('-p', '--patterns-file', nargs='?',
                        help='json file of patterns for scanning')
 
     args = parser.parse_args()
 
-    s = Scanner()
-    if args.parent_dir:
-        s.scan(path='/home/jbruce/repos/')
+    if args.patterns_file:
+        s = Scanner(patterns_file=args.patterns_file)
+    else:
+        s = Scanner()
 
+    if args.parent_dir:
+        s.scan(path=args.parent_dir)
+
+    if args.github_api_token:
+        s = Scanner(github_api_token = args.github_api_token,
+                    github_base_url = args.github_base_url)
+        s.scan_github()
